@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+models/*.pkl
+output/*
+.ipynb_checkpoints/
+dataset/clienti_geocoded.json

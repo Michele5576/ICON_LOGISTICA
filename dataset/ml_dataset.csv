@@ -1,0 +1,101 @@
+Codice_Cliente,media_ritardo,std_ritardo,max_ritardo,pct_ritardo_positivo,conteggio_consegne,pct_fallite,macrozona_principale,profilo_comportamentale,macrozona_encoded
+900053,10.31578947368421,3.2154597317568303,15,1.0,19,0.0,Lecce Sud (Versante Ionio),lieve_ritardo,5
+900851,0.0,0.0,0,0.0,10,0.0,Bari Sud,puntuale,2
+902552,0.0,0.0,0,0.0,15,0.0,Bari Nord,puntuale,1
+905075,0.0,0.0,0,0.0,16,0.0,Foggia,puntuale,3
+907100,0.0,0.0,0,0.0,13,0.0,Bari Nord,puntuale,1
+907331,0.0,0.0,0,0.0,15,0.0,Lecce Nord (Versante Adriatico),puntuale,4
+908392,0.0,0.0,0,0.0,8,0.0,Potenza,puntuale,7
+909016,11.055555555555555,3.5392292650871986,15,1.0,18,0.0,Lecce Nord (Versante Adriatico),lieve_ritardo,4
+909099,17.214285714285715,14.27304383163522,44,1.0,14,0.5,Lecce Sud (Versante Ionio),recidivo,5
+909116,19.25,12.914554358773449,38,1.0,8,0.375,Bari Città,recidivo,0
+909305,0.0,0.0,0,0.0,17,0.0,Bari Città,puntuale,0
+909862,0.0,0.0,0,0.0,12,0.0,Bari Sud,puntuale,2
+912704,22.166666666666668,13.835614999856077,44,1.0,12,0.25,Taranto,recidivo,8
+913104,19.571428571428573,14.324343377160895,43,1.0,14,0.42857142857142855,Bari Nord,recidivo,1
+913238,0.0,0.0,0,0.0,14,0.0,Taranto,puntuale,8
+918131,0.0,0.0,0,0.0,13,0.0,Matera,puntuale,6
+920374,0.0,0.0,0,0.0,18,0.0,Lecce Sud (Versante Ionio),puntuale,5
+920730,10.05,3.2843328249833568,15,1.0,20,0.0,Foggia,lieve_ritardo,3
+920969,0.0,0.0,0,0.0,14,0.0,Taranto,puntuale,8
+921174,0.0,0.0,0,0.0,16,0.0,Matera,puntuale,6
+921417,0.0,0.0,0,0.0,16,0.0,Foggia,puntuale,3
+923819,0.0,0.0,0,0.0,9,0.0,Bari Città,puntuale,0
+924356,0.0,0.0,0,0.0,13,0.0,Bari Nord,puntuale,1
+924914,0.0,0.0,0,0.0,16,0.0,Lecce Sud (Versante Ionio),puntuale,5
+924931,0.0,0.0,0,0.0,18,0.0,Matera,puntuale,6
+927460,11.357142857142858,3.15270684326349,15,1.0,14,0.0,Lecce Sud (Versante Ionio),lieve_ritardo,5
+927535,10.117647058823529,2.9343302673092304,14,1.0,17,0.0,Lecce Nord (Versante Adriatico),lieve_ritardo,4
+927653,19.375,10.992692377861108,37,1.0,8,0.25,Potenza,recidivo,7
+928569,8.8,2.833473385894321,15,1.0,15,0.0,Foggia,lieve_ritardo,3
+928657,0.0,0.0,0,0.0,13,0.0,Lecce Nord (Versante Adriatico),puntuale,4
+929831,0.0,0.0,0,0.0,14,0.0,Lecce Nord (Versante Adriatico),puntuale,4
+930735,0.0,0.0,0,0.0,19,0.0,Lecce Sud (Versante Ionio),puntuale,5
+931029,0.0,0.0,0,0.0,10,0.0,Bari Sud,puntuale,2
+931195,19.0,12.644717825593771,45,1.0,19,0.3684210526315789,Lecce Sud (Versante Ionio),recidivo,5
+932092,0.0,0.0,0,0.0,13,0.0,Foggia,puntuale,3
+932742,10.636363636363637,2.8025961989814827,14,1.0,11,0.0,Bari Nord,lieve_ritardo,1
+934335,0.0,0.0,0,0.0,10,0.0,Bari Sud,puntuale,2
+934795,10.0,3.785938897200183,15,1.0,13,0.0,Bari Città,lieve_ritardo,0
+939139,0.0,0.0,0,0.0,12,0.0,Taranto,puntuale,8
+939240,10.2,3.2337505867247796,15,1.0,15,0.0,Bari Nord,lieve_ritardo,1
+940888,0.0,0.0,0,0.0,16,0.0,Taranto,puntuale,8
+941114,16.923076923076923,16.038815097867726,43,1.0,13,0.6153846153846154,Taranto,recidivo,8
+941180,9.777777777777779,3.4904163843226086,15,1.0,18,0.0,Lecce Nord (Versante Adriatico),lieve_ritardo,4
+942237,0.0,0.0,0,0.0,18,0.0,Foggia,puntuale,3
+943540,0.0,0.0,0,0.0,15,0.0,Taranto,puntuale,8
+944118,10.1875,3.581782610191002,15,1.0,16,0.0,Bari Nord,lieve_ritardo,1
+944236,9.272727272727273,3.8233730942953787,14,1.0,11,0.0,Taranto,lieve_ritardo,8
+949615,0.0,0.0,0,0.0,14,0.0,Bari Nord,puntuale,1
+950205,0.0,0.0,0,0.0,15,0.0,Bari Sud,puntuale,2
+951173,20.444444444444443,14.769691630148314,45,1.0,18,0.3888888888888889,Lecce Sud (Versante Ionio),recidivo,5
+951645,27.0,14.149990184527418,42,1.0,10,0.2,Bari Città,recidivo,0
+952994,0.0,0.0,0,0.0,9,0.0,Bari Sud,puntuale,2
+953528,0.0,0.0,0,0.0,9,0.0,Potenza,puntuale,7
+955108,0.0,0.0,0,0.0,13,0.0,Taranto,puntuale,8
+955518,10.631578947368421,3.386419385916331,15,1.0,19,0.0,Lecce Sud (Versante Ionio),lieve_ritardo,5
+956333,10.714285714285714,10.02853072844814,29,1.0,7,0.7142857142857143,Bari Sud,lieve_ritardo,2
+957125,9.0,3.5590260840104366,15,1.0,16,0.0,Foggia,lieve_ritardo,3
+959929,20.5,13.337915879176926,38,1.0,6,0.3333333333333333,Potenza,recidivo,7
+960901,10.133333333333333,3.461351236287988,15,1.0,15,0.0,Matera,lieve_ritardo,6
+961069,20.3,16.459040069214243,44,1.0,10,0.5,Taranto,recidivo,8
+961348,11.11111111111111,3.0076156060884727,15,1.0,18,0.0,Matera,lieve_ritardo,6
+961644,10.071428571428571,3.3157963590222925,15,1.0,14,0.0,Bari Città,lieve_ritardo,0
+962216,0.0,0.0,0,0.0,21,0.0,Foggia,puntuale,3
+962493,0.0,0.0,0,0.0,16,0.0,Matera,puntuale,6
+963092,0.0,0.0,0,0.0,17,0.0,Lecce Nord (Versante Adriatico),puntuale,4
+966542,0.0,0.0,0,0.0,10,0.0,Bari Nord,puntuale,1
+968327,10.411764705882353,3.35519789895864,15,1.0,17,0.0,Foggia,lieve_ritardo,3
+969163,0.0,0.0,0,0.0,10,0.0,Taranto,puntuale,8
+969822,0.0,0.0,0,0.0,5,0.0,Bari Sud,puntuale,2
+970282,0.0,0.0,0,0.0,10,0.0,Potenza,puntuale,7
+970575,23.857142857142858,14.325800900074363,43,1.0,21,0.2857142857142857,Lecce Nord (Versante Adriatico),recidivo,4
+970644,0.0,0.0,0,0.0,25,0.0,Lecce Sud (Versante Ionio),puntuale,5
+970855,0.0,0.0,0,0.0,11,0.0,Bari Città,puntuale,0
+972845,14.466666666666667,12.855608374039194,37,1.0,15,0.6,Foggia,recidivo,3
+974364,13.272727272727273,12.042349514035118,32,1.0,11,0.6363636363636364,Bari Nord,recidivo,1
+974668,0.0,0.0,0,0.0,12,0.0,Lecce Nord (Versante Adriatico),puntuale,4
+974847,0.0,0.0,0,0.0,14,0.0,Foggia,puntuale,3
+975914,0.0,0.0,0,0.0,13,0.0,Matera,puntuale,6
+976556,14.777777777777779,12.607317099384963,34,1.0,9,0.5555555555555556,Bari Città,recidivo,0
+979131,0.0,0.0,0,0.0,21,0.0,Lecce Sud (Versante Ionio),puntuale,5
+981439,0.0,0.0,0,0.0,11,0.0,Bari Sud,puntuale,2
+981678,0.0,0.0,0,0.0,5,0.0,Potenza,puntuale,7
+982213,11.636363636363637,3.2946237197205774,15,1.0,11,0.0,Lecce Nord (Versante Adriatico),lieve_ritardo,4
+982544,0.0,0.0,0,0.0,17,0.0,Lecce Nord (Versante Adriatico),puntuale,4
+983810,0.0,0.0,0,0.0,14,0.0,Bari Nord,puntuale,1
+984259,10.227272727272727,3.421665122099504,15,1.0,22,0.0,Foggia,lieve_ritardo,3
+985181,0.0,0.0,0,0.0,18,0.0,Matera,puntuale,6
+985426,10.142857142857142,3.6554941338535016,15,1.0,14,0.0,Bari Città,lieve_ritardo,0
+986163,10.1,3.142893217686178,15,1.0,10,0.0,Matera,lieve_ritardo,6
+988039,0.0,0.0,0,0.0,4,0.0,Potenza,puntuale,7
+989353,0.0,0.0,0,0.0,12,0.0,Matera,puntuale,6
+990111,0.0,0.0,0,0.0,22,0.0,Lecce Sud (Versante Ionio),puntuale,5
+990128,0.0,0.0,0,0.0,13,0.0,Bari Città,puntuale,0
+991214,0.0,0.0,0,0.0,16,0.0,Matera,puntuale,6
+992214,10.095238095238095,3.433726283569526,15,1.0,21,0.0,Lecce Sud (Versante Ionio),lieve_ritardo,5
+994276,11.125,3.4034296427770228,15,1.0,16,0.0,Matera,lieve_ritardo,6
+996463,9.785714285714286,2.9659236835601983,13,1.0,14,0.0,Bari Sud,lieve_ritardo,2
+996530,0.0,0.0,0,0.0,13,0.0,Bari Nord,puntuale,1
+998032,0.0,0.0,0,0.0,10,0.0,Bari Nord,puntuale,1
+998453,0.0,0.0,0,0.0,11,0.0,Lecce Nord (Versante Adriatico),puntuale,4

@@ -1,0 +1,10 @@
+Training Report
+===============
+
+| Modello | Accuracy | Macro-F1 | Weighted-F1 |
+|---------|----------|----------|-------------|
+| RF      | 0.99+/-0.02 | 0.98+/-0.03 | 0.99+/-0.02 |
+| KNN     | 0.99+/-0.02 | 0.98+/-0.03 | 0.99+/-0.02 |
+
+Best Model: RF
+Best Hyperparameters: {'max_depth': 3, 'n_estimators': 50}

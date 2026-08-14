@@ -1,0 +1,10 @@
+pandas
+openpyxl
+numpy
+scipy
+scikit-learn
+ortools
+pyswip
+geopy
+joblib
+pytest
