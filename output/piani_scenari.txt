@@ -1,0 +1,134 @@
+SCENARIO feriale
+Data 2026-07-01 (feriale)
+  CSP: costo 195.2, ottimo=False, nodi 131453, valori rimossi da GAC 0, 20.42 s
+  v_cit_05: 6 clienti, 16.8 km, partenza 11:52, rientro 14:39, ritardi 0
+     arrivo 12:00  servizio 12:00  c_909116
+     arrivo 12:40  servizio 12:40  c_970855
+     arrivo 12:50  servizio 12:50  c_985426
+     arrivo 13:10  servizio 13:10  c_923819
+     arrivo 13:23  servizio 14:00  c_990128
+     arrivo 14:13  servizio 14:13  c_961644
+  v_spr_01: 5 clienti, 14.8 km, partenza 11:53, rientro 14:19, ritardi 0
+     arrivo 12:00  servizio 12:00  c_913104
+     arrivo 12:43  servizio 12:43  c_998032
+     arrivo 12:54  servizio 12:54  c_966542
+     arrivo 13:04  servizio 13:04  c_983810
+     arrivo 13:16  servizio 14:00  c_996530
+  v_spr_02: 8 clienti, 14.8 km, partenza 08:54, rientro 15:46, ritardi 0
+     arrivo 09:00  servizio 09:00  c_932742
+     arrivo 09:24  servizio 09:24  c_939240
+     arrivo 09:46  servizio 11:00  c_924356
+     arrivo 11:10  servizio 11:10  c_944118
+     arrivo 11:31  servizio 12:00  c_902552
+     arrivo 12:10  servizio 13:00  c_949615
+     arrivo 13:12  servizio 13:12  c_907100
+     arrivo 13:23  servizio 15:00  c_974364
+  v_spr_03: 9 clienti, 16.4 km, partenza 08:00, rientro 16:51, ritardi 0
+     arrivo 08:06  servizio 08:06  c_909305
+     arrivo 08:18  servizio 12:00  c_900851
+     arrivo 12:12  servizio 13:00  c_909862
+     arrivo 13:11  servizio 13:11  c_996463
+     arrivo 13:34  servizio 14:00  c_931029
+     arrivo 14:13  servizio 14:13  c_956333
+     arrivo 14:55  servizio 15:00  c_976556
+     arrivo 15:45  servizio 15:45  c_951645
+     arrivo 16:25  servizio 16:25  c_934795
+  v_spr_04: 5 clienti, 21.5 km, partenza 09:52, rientro 15:47, ritardi 0
+     arrivo 10:00  servizio 10:00  c_952994
+     arrivo 10:14  servizio 14:00  c_934335
+     arrivo 14:10  servizio 15:00  c_981439
+     arrivo 15:17  servizio 15:17  c_969822
+     arrivo 15:31  servizio 15:31  c_950205
+  Da preavvisare (rischio mancata consegna): c_909116, c_974364, c_913104, c_956333, c_976556, c_951645
+
+SCENARIO festivo
+Data 2026-07-05 (festivo)
+  CSP: costo 195.2, ottimo=False, nodi 131414, valori rimossi da GAC 0, 20.42 s
+  v_cit_05: 6 clienti, 16.8 km, partenza 11:52, rientro 14:39, ritardi 0
+     arrivo 12:00  servizio 12:00  c_909116
+     arrivo 12:40  servizio 12:40  c_970855
+     arrivo 12:50  servizio 12:50  c_985426
+     arrivo 13:10  servizio 13:10  c_923819
+     arrivo 13:23  servizio 14:00  c_990128
+     arrivo 14:13  servizio 14:13  c_961644
+  v_spr_01: 5 clienti, 14.8 km, partenza 11:53, rientro 14:19, ritardi 0
+     arrivo 12:00  servizio 12:00  c_913104
+     arrivo 12:43  servizio 12:43  c_998032
+     arrivo 12:54  servizio 12:54  c_966542
+     arrivo 13:04  servizio 13:04  c_983810
+     arrivo 13:16  servizio 14:00  c_996530
+  v_spr_02: 8 clienti, 14.8 km, partenza 08:54, rientro 15:46, ritardi 0
+     arrivo 09:00  servizio 09:00  c_932742
+     arrivo 09:24  servizio 09:24  c_939240
+     arrivo 09:46  servizio 11:00  c_924356
+     arrivo 11:10  servizio 11:10  c_944118
+     arrivo 11:31  servizio 12:00  c_902552
+     arrivo 12:10  servizio 13:00  c_949615
+     arrivo 13:12  servizio 13:12  c_907100
+     arrivo 13:23  servizio 15:00  c_974364
+  v_spr_03: 9 clienti, 16.4 km, partenza 08:00, rientro 16:51, ritardi 0
+     arrivo 08:06  servizio 08:06  c_909305
+     arrivo 08:18  servizio 12:00  c_900851
+     arrivo 12:12  servizio 13:00  c_909862
+     arrivo 13:11  servizio 13:11  c_996463
+     arrivo 13:34  servizio 14:00  c_931029
+     arrivo 14:13  servizio 14:13  c_956333
+     arrivo 14:55  servizio 15:00  c_976556
+     arrivo 15:45  servizio 15:45  c_951645
+     arrivo 16:25  servizio 16:25  c_934795
+  v_spr_04: 5 clienti, 21.5 km, partenza 09:52, rientro 15:47, ritardi 0
+     arrivo 10:00  servizio 10:00  c_952994
+     arrivo 10:14  servizio 14:00  c_934335
+     arrivo 14:10  servizio 15:00  c_981439
+     arrivo 15:17  servizio 15:17  c_969822
+     arrivo 15:31  servizio 15:31  c_950205
+  Da preavvisare (rischio mancata consegna): c_909116, c_974364, c_913104, c_956333, c_976556, c_951645
+
+SCENARIO evento
+Data 2027-05-07 (evento)
+  CSP: costo 153.9, ottimo=False, nodi 143627, valori rimossi da GAC 0, 20.37 s
+  NON SERVIBILE c_970855: permesso_sospeso_per_evento, ztl_senza_permesso
+  NON SERVIBILE c_990128: permesso_sospeso_per_evento, ztl_senza_permesso
+  NON SERVIBILE c_923819: permesso_sospeso_per_evento, ztl_senza_permesso
+  NON SERVIBILE c_985426: permesso_sospeso_per_evento, ztl_senza_permesso
+  v_cit_05: 5 clienti, 14.8 km, partenza 11:53, rientro 14:19, ritardi 0
+     arrivo 12:00  servizio 12:00  c_913104
+     arrivo 12:43  servizio 12:43  c_998032
+     arrivo 12:54  servizio 12:54  c_966542
+     arrivo 13:04  servizio 13:04  c_983810
+     arrivo 13:15  servizio 14:00  c_996530
+  v_spr_01: 6 clienti, 16.7 km, partenza 08:54, rientro 16:50, ritardi 0
+     arrivo 09:00  servizio 09:00  c_932742
+     arrivo 09:26  servizio 12:00  c_909116
+     arrivo 12:40  servizio 13:00  c_907100
+     arrivo 13:10  servizio 15:00  c_974364
+     arrivo 15:45  servizio 15:45  c_951645
+     arrivo 16:25  servizio 16:25  c_934795
+  v_spr_02: 8 clienti, 15.1 km, partenza 08:00, rientro 16:01, ritardi 0
+     arrivo 08:06  servizio 08:06  c_909305
+     arrivo 08:17  servizio 13:00  c_956333
+     arrivo 13:43  servizio 13:43  c_900851
+     arrivo 13:54  servizio 13:54  c_996463
+     arrivo 14:15  servizio 14:15  c_909862
+     arrivo 14:27  servizio 14:27  c_961644
+     arrivo 14:49  servizio 15:00  c_976556
+     arrivo 15:46  servizio 15:46  c_931029
+  v_spr_03: 5 clienti, 12.3 km, partenza 08:53, rientro 13:17, ritardi 0
+     arrivo 09:00  servizio 09:00  c_939240
+     arrivo 09:22  servizio 11:00  c_924356
+     arrivo 11:10  servizio 11:10  c_944118
+     arrivo 11:31  servizio 12:00  c_902552
+     arrivo 12:10  servizio 13:00  c_949615
+  v_spr_04: 5 clienti, 21.5 km, partenza 09:52, rientro 15:47, ritardi 0
+     arrivo 10:00  servizio 10:00  c_952994
+     arrivo 10:14  servizio 14:00  c_934335
+     arrivo 14:10  servizio 15:00  c_981439
+     arrivo 15:17  servizio 15:17  c_969822
+     arrivo 15:31  servizio 15:31  c_950205
+  Da preavvisare (rischio mancata consegna): c_909116, c_974364, c_913104, c_956333, c_976556, c_951645
+
+| Scenario | Tipo giorno | Clienti serviti | Veicoli | km | Ritardi | Ultimo rientro | Giri oltre turno | Transiti ZTL obbligati |
+|---|---|---|---|---|---|---|---|---|
+| feriale | feriale | 33/33 | 5 | 84.2 | 0 | 16:51 | 0 | 0 |
+| festivo | festivo | 33/33 | 5 | 84.2 | 0 | 16:51 | 0 | 0 |
+| evento | evento | 29/33 | 5 | 80.4 | 0 | 16:50 | 0 | 0 |

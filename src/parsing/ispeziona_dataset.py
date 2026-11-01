@@ -1,9 +1,9 @@
 """
-Fase 0 — Ispezione dataset reale.
+Ispezione dei dati di partenza.
 
-Legge i due file in dataset/ e produce SCHEMA_REALE.md con la struttura
-esatta trovata. Questo report sovrascrive ogni assunzione del master prompt
-se in conflitto.
+Legge il file Excel e l'estratto OSM in dataset/ e produce
+dataset/SCHEMA_REALE.md: fogli, colonne, valori mancanti, tipi di strada,
+riquadro geografico. Serve a verificare i dati prima del parsing.
 """
 
 import os
@@ -12,11 +12,10 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 import openpyxl
 
-# Aggiungi la root del progetto al path per gli import
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
 
-DATASET_DIR = ROOT / "dataset"
+from src.config import DATASET_DIR  # noqa: E402
 
 
 def ispeziona_excel(path: Path) -> dict:
@@ -153,7 +152,7 @@ def ispeziona_xml(path: Path) -> dict:
 def scrivi_report(schema_excel: dict, schema_xml: dict, output_path: Path) -> None:
     """Scrive il report SCHEMA_REALE.md."""
     lines = ["# SCHEMA REALE DEI DATASET\n"]
-    lines.append(f"*Generato automaticamente da `ispeziona_dataset.py`*\n\n")
+    lines.append("*Generato da `src/parsing/ispeziona_dataset.py`*\n\n")
 
     # --- EXCEL ---
     lines.append("## 1. File Excel\n\n")
@@ -161,7 +160,7 @@ def scrivi_report(schema_excel: dict, schema_xml: dict, output_path: Path) -> No
     for nome_foglio, info in schema_excel.items():
         lines.append(f"### Foglio: `{nome_foglio}`\n\n")
         if info.get("nota"):
-            lines.append(f"WARNING: {info['nota']}\n\n")
+            lines.append(f"Nota: {info['nota']}\n\n")
             continue
 
         lines.append(f"- **Righe dati**: {info['n_righe']}\n")
@@ -190,8 +189,8 @@ def scrivi_report(schema_excel: dict, schema_xml: dict, output_path: Path) -> No
     if schema_xml["bbox_geografico"]:
         bb = schema_xml["bbox_geografico"]
         lines.append("### Bounding Box Geografico\n\n")
-        lines.append(f"| | Min | Max |\n")
-        lines.append(f"|---|-----|-----|\n")
+        lines.append("| | Min | Max |\n")
+        lines.append("|---|-----|-----|\n")
         lines.append(f"| Latitudine | {bb['lat_min']:.6f} | {bb['lat_max']:.6f} |\n")
         lines.append(f"| Longitudine | {bb['lon_min']:.6f} | {bb['lon_max']:.6f} |\n\n")
 
@@ -222,7 +221,6 @@ def scrivi_report(schema_excel: dict, schema_xml: dict, output_path: Path) -> No
 
 
 if __name__ == "__main__":
-    # Trova i file dataset reali
     xlsx_files = list(DATASET_DIR.glob("*.xlsx"))
     xml_files = list(DATASET_DIR.glob("*.xml"))
 

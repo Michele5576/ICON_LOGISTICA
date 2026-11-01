@@ -1,176 +1,145 @@
 """
-A* search algorithm on the road graph of Bari for vehicle routing.
+Ricerca del percorso a tempo minimo sul grafo stradale orientato di Bari.
+
+- A*: f(n) = g(n) + h(n), con g = tempo di percorrenza (ore) e
+  h = distanza in linea d'aria / V_MAX_KMH. h e' ammissibile (nessun arco
+  si percorre a piu' di V_MAX_KMH, quindi h non sovrastima mai il tempo
+  residuo) e consistente (disuguaglianza triangolare della distanza
+  ortodromica): A* con eliminazione dei duplicati resta ottimale.
+- LCFS (Lowest-Cost-First Search): stessa procedura con h = 0,
+  usata come termine di confronto per misurare il guadagno dell'euristica.
+
+Vincoli di transito forniti dalla KB, per veicolo:
+- velocita' per tipo di strada (default ed eccezioni per classe di veicolo);
+- tipi di strada vietati, ammessi solo come ultimo arco verso la destinazione;
+- nodi ZTL da evitare se il veicolo non ha accesso alla ZTL in quel momento
+  (sempre ammessi destinazione e partenza).
 """
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-import math
 import heapq
+import math
 import pickle
-from typing import Optional, Tuple, List, Dict, Set
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Set, Tuple
 
-from src.config import V_MAX_KMH, VELOCITA_KMH, GRAFO_PICKLE, KB_DIR, DEPOSITO_LAT, DEPOSITO_LON
+from src.config import GRAFO_PICKLE, VELOCITA_KMH, V_MAX_KMH, ZTL_PL
+
 
 def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """Calculate the great circle distance between two points on Earth in km."""
-    R = 6371.0 # Earth radius in kilometers
+    """Distanza ortodromica in km."""
+    R = 6371.0
     dlat = math.radians(lat2 - lat1)
     dlon = math.radians(lon2 - lon1)
-    a = (math.sin(dlat / 2)**2 +
-         math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2)**2)
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    return R * c
+    a = (math.sin(dlat / 2) ** 2 +
+         math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2)
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
-def a_star(
-    start: str, goal: str,
-    adj: dict, coords: dict,
-    evita_ztl: bool = False,
-    ztl_set: set = None
-) -> Tuple[Optional[List[str]], float, float]:
-    """
-    Returns (path, total_distance_km, total_time_hours) or (None, inf, inf).
-    """
-    if ztl_set is None:
-        ztl_set = set()
 
+@dataclass
+class ProfiloVeicolo:
+    """Vincoli di transito di un veicolo (derivati dalla KB)."""
+    velocita: Dict[str, float] = field(default_factory=lambda: dict(VELOCITA_KMH))
+    vietate: Set[str] = field(default_factory=set)
+    evita_ztl: bool = False
+
+
+@dataclass
+class Risultato:
+    percorso: Optional[List[str]]
+    distanza_km: float
+    tempo_ore: float
+    nodi_espansi: int
+
+
+def ricerca(start: str, goal: str, adj: dict, coords: dict,
+            profilo: ProfiloVeicolo, ztl_set: Set[str], euristica: bool = True) -> Risultato:
+    """A* (euristica=True) o LCFS (euristica=False) su grafo con pruning dei cammini multipli."""
     if start not in coords or goal not in coords:
-        return None, float('inf'), float('inf')
+        return Risultato(None, math.inf, math.inf, 0)
+    lat_g, lon_g = coords[goal]
 
-    # Priority queue stores (f_score, node)
-    open_set = []
-    heapq.heappush(open_set, (0.0, start))
-    
-    came_from = {}
-    g_score = {start: 0.0} # time in hours
-    distance_score = {start: 0.0} # distance in km
+    def h(n: str) -> float:
+        if not euristica:
+            return 0.0
+        lat, lon = coords[n]
+        return haversine(lat, lon, lat_g, lon_g) / V_MAX_KMH
 
-    def h(node: str) -> float:
-        """Admissible heuristic: straight line distance / max speed (gives min time)"""
-        lat1, lon1 = coords[node]
-        lat2, lon2 = coords[goal]
-        dist = haversine(lat1, lon1, lat2, lon2)
-        return dist / V_MAX_KMH
+    frontiera = [(h(start), 0.0, start)]
+    g = {start: 0.0}
+    dist = {start: 0.0}
+    padre = {}
+    chiusi = set()
+    espansi = 0
+    v_default = profilo.velocita.get("default", VELOCITA_KMH["default"])
 
-    while open_set:
-        current_f, current = heapq.heappop(open_set)
+    while frontiera:
+        _, g_corr, n = heapq.heappop(frontiera)
+        if n in chiusi:
+            continue  # cammino multiplo gia' espanso con costo minore
+        chiusi.add(n)
+        espansi += 1
+        if n == goal:
+            percorso = [n]
+            while n in padre:
+                n = padre[n]
+                percorso.append(n)
+            return Risultato(percorso[::-1], dist[goal], g[goal], espansi)
 
-        if current == goal:
-            # Reconstruct path
-            path = []
-            curr = current
-            while curr in came_from:
-                path.append(curr)
-                curr = came_from[curr]
-            path.append(start)
-            path.reverse()
-            return path, distance_score[current], g_score[current]
-
-        # In case we have a stale entry in the heap
-        if current_f > g_score[current] + h(current):
-            continue
-
-        for neighbor, distance_km, road_type in adj.get(current, []):
-            if evita_ztl and neighbor in ztl_set and neighbor != goal and neighbor != start:
+        for vicino, km, tipo in adj.get(n, []):
+            if vicino in chiusi:
                 continue
+            if tipo in profilo.vietate and vicino != goal:
+                continue
+            if profilo.evita_ztl and vicino in ztl_set and vicino != goal:
+                continue
+            nuovo_g = g_corr + km / profilo.velocita.get(tipo, v_default)
+            if nuovo_g < g.get(vicino, math.inf):
+                g[vicino] = nuovo_g
+                dist[vicino] = dist[n] + km
+                padre[vicino] = n
+                heapq.heappush(frontiera, (nuovo_g + h(vicino), nuovo_g, vicino))
 
-            speed = VELOCITA_KMH.get(road_type, VELOCITA_KMH.get('default', 30.0))
-            edge_time = distance_km / speed
-            tentative_g = g_score[current] + edge_time
+    return Risultato(None, math.inf, math.inf, espansi)
 
-            if tentative_g < g_score.get(neighbor, float('inf')):
-                came_from[neighbor] = current
-                g_score[neighbor] = tentative_g
-                distance_score[neighbor] = distance_score[current] + distance_km
-                f_score = tentative_g + h(neighbor)
-                heapq.heappush(open_set, (f_score, neighbor))
 
-    return None, float('inf'), float('inf')
+def a_star(start, goal, adj, coords, profilo, ztl_set) -> Risultato:
+    return ricerca(start, goal, adj, coords, profilo, ztl_set, euristica=True)
+
+
+def lcfs(start, goal, adj, coords, profilo, ztl_set) -> Risultato:
+    return ricerca(start, goal, adj, coords, profilo, ztl_set, euristica=False)
+
 
 def carica_grafo() -> Tuple[Dict, Dict, Set]:
-    """Load adj, coords, ztl_set from files."""
-    with open(GRAFO_PICKLE, 'rb') as f:
+    """Carica lista di adiacenza, coordinate e insieme dei nodi ZTL."""
+    with open(GRAFO_PICKLE, "rb") as f:
         data = pickle.load(f)
-    adj = data['adj']
-    coords = data['coords']
-    
     ztl_set = set()
-    ztl_path = KB_DIR / 'ztl_nodi.pl'
-    if ztl_path.exists():
-        with open(ztl_path, encoding='utf-8') as f:
-            for line in f:
-                if line.startswith('in_ztl('):
-                    nid = line.strip().replace('in_ztl(', '').replace(').', '')
-                    ztl_set.add(nid)
-    else:
-        print(f"[WARNING] ZTL file not found at {ztl_path}")
+    if ZTL_PL.exists():
+        for riga in ZTL_PL.read_text(encoding="utf-8").splitlines():
+            if riga.startswith("in_ztl("):
+                ztl_set.add(riga[len("in_ztl("):-2])
+    return data["adj"], data["coords"], ztl_set
 
-    return adj, coords, ztl_set
 
 def trova_nodo_vicino(lat: float, lon: float, coords: Dict[str, Tuple[float, float]]) -> str:
-    """Find nearest graph node to given coordinates."""
-    nearest = None
-    min_dist = float('inf')
-    for node, (n_lat, n_lon) in coords.items():
-        dist = haversine(lat, lon, n_lat, n_lon)
-        if dist < min_dist:
-            min_dist = dist
-            nearest = node
-    return nearest
+    return min(coords, key=lambda n: haversine(lat, lon, *coords[n]))
 
-def main():
-    print("[INFO] Loading graph...")
-    adj, coords, ztl_set = carica_grafo()
-    print(f"[OK] Graph loaded: {len(coords)} nodes, {sum(len(v) for v in adj.values())} edges.")
-    print(f"[INFO] Nodes in ZTL: {len(ztl_set)}")
 
-    # Find deposito node
-    deposito_node = trova_nodo_vicino(DEPOSITO_LAT, DEPOSITO_LON, coords)
-    print(f"[INFO] Deposito node: {deposito_node} (lat, lon = {coords[deposito_node]})")
+if __name__ == "__main__":
+    import random
+    import time
+    from src.config import DEPOSITO_LAT, DEPOSITO_LON
 
-    # Pick a client node
-    client_lat, client_lon = None, None
-    client_path = KB_DIR / 'clienti.pl'
-    if client_path.exists():
-        with open(client_path, encoding='utf-8') as f:
-            for line in f:
-                if line.startswith('cliente('):
-                    # cliente(c1, 41.123, 16.85, ...).
-                    parts = line.split(',')
-                    try:
-                        client_lat = float(parts[1].strip())
-                        client_lon = float(parts[2].strip())
-                        break
-                    except ValueError:
-                        continue
-    
-    if client_lat is not None and client_lon is not None:
-        client_node = trova_nodo_vicino(client_lat, client_lon, coords)
-    else:
-        # Fallback to some node
-        client_node = list(coords.keys())[-1]
-    
-    print(f"[INFO] Client node: {client_node} (lat, lon = {coords[client_node]})")
-
-    print("[INFO] Running A* WITHOUT ZTL avoidance...")
-    path1, dist1, time1 = a_star(deposito_node, client_node, adj, coords, evita_ztl=False, ztl_set=ztl_set)
-    if path1:
-        print(f"[OK] Found path without ZTL avoidance: {len(path1)} nodes, {dist1:.2f} km, {time1:.2f} hours")
-    else:
-        print("[ERROR] Path without ZTL not found.")
-
-    print("[INFO] Running A* WITH ZTL avoidance...")
-    path2, dist2, time2 = a_star(deposito_node, client_node, adj, coords, evita_ztl=True, ztl_set=ztl_set)
-    if path2:
-        print(f"[OK] Found path with ZTL avoidance: {len(path2)} nodes, {dist2:.2f} km, {time2:.2f} hours")
-    else:
-        print("[ERROR] Path with ZTL not found. (Could be unreachable without entering ZTL)")
-
-    if path1 and path2:
-        if dist2 > dist1 or time2 > time1:
-            print("[INFO] Comparison: Avoiding ZTL takes longer/further as expected.")
-        else:
-            print("[INFO] Comparison: ZTL avoidance doesn't impact distance/time significantly for this route.")
-
-if __name__ == '__main__':
-    main()
+    adj, coords, ztl = carica_grafo()
+    print(f"[OK] Grafo: {len(coords)} nodi, {sum(len(v) for v in adj.values())} archi, {len(ztl)} nodi ZTL")
+    dep = trova_nodo_vicino(DEPOSITO_LAT, DEPOSITO_LON, coords)
+    dest = random.Random(0).choice(sorted(ztl))
+    for nome, fn in [("A*", a_star), ("LCFS", lcfs)]:
+        t = time.perf_counter()
+        r = fn(dep, dest, adj, coords, ProfiloVeicolo(), ztl)
+        print(f"{nome}: {r.distanza_km:.2f} km, {r.tempo_ore * 60:.1f} min, "
+              f"{r.nodi_espansi} nodi espansi, {time.perf_counter() - t:.3f} s")

@@ -1,7 +1,6 @@
 .venv/
 __pycache__/
 *.pyc
-models/*.pkl
-output/*
+.pytest_cache/
 .ipynb_checkpoints/
-dataset/clienti_geocoded.json
+output/piano_*.txt

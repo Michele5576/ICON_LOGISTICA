@@ -1,5 +1,5 @@
 # SCHEMA REALE DEI DATASET
-*Generato automaticamente da `ispeziona_dataset.py`*
+*Generato da `src/parsing/ispeziona_dataset.py`*
 
 ## 1. File Excel
 
@@ -17,7 +17,7 @@
 | 5 | `Alimentazione` | 5 | 0 | str | 1 | Diesel, Diesel, Diesel |
 | 6 | `Cella_Frigo` | 5 | 0 | str | 2 | SI, SI, SI |
 | 7 | `Capacita_Carico_kg` | 5 | 0 | int | 2 | 1500, 1500, 1500 |
-| 8 | `Volume_Carico_m3` | 5 | 0 | float, int | 2 | 14, 14, 14 |
+| 8 | `Volume_Carico_m3` | 5 | 0 | int, float | 2 | 14, 14, 14 |
 
 ### Foglio: `2_Anagrafica_Clienti`
 
@@ -56,7 +56,7 @@
 
 ## 2. File XML (Grafo Stradale)
 
-- **Dimensione**: 7.89 MB
+- **Dimensione**: 8.11 MB
 - **Tag root**: `osm`
 - **Nodi**: 57242
 - **Way**: 13054

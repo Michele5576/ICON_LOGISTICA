@@ -1,11 +1,18 @@
 """
-main.py — Orchestratore End-to-End
+main.py — Orchestratore end-to-end
 Logistica Flotta Furgoni Bari
 
-Pipeline: KB -> ML -> CSP -> A* -> Piano di Consegna
-Confronto: Giorno feriale vs Corteo San Nicola
-"""
+Pipeline per una data di pianificazione:
+  1. KB      tipo di giorno, veicoli idonei, finestre effettive, motivi di esclusione
+  2. ML      durata del servizio e rischio di mancata consegna -> fatti nella KB
+  3. CSP     assegnamento clienti -> veicoli (GAC + Branch and Bound, limite iniziale da Simulated Annealing)
+  4. Ricerca ordine di visita (DF Branch and Bound) e percorsi con A*
 
+Uso:
+  python src/main.py                       # confronto feriale / festivo / evento
+  python src/main.py --data 2026-07-01     # pianificazione di una singola data
+"""
+import argparse
 import sys
 import time
 from pathlib import Path
@@ -13,233 +20,145 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.config import (
-    setup_swipl_env, DEPOSITO_LAT, DEPOSITO_LON,
-    PENALITA_PROFILO, OUTPUT_DIR
-)
+import pandas as pd
 
-# Setup SWI-Prolog PRIMA di importare moduli che usano janus
-setup_swipl_env()
-
+from src.config import (DEPOSITO_LAT, DEPOSITO_LON, INIZIO_TURNO_MIN, OUTPUT_DIR,
+                        POSIZIONI_CLIENTI_CSV, TURNO_MIN)
+from src.csp.assignment import costruisci_istanza, risolvi
 from src.kb_interface.prolog_interface import KnowledgeBase
-from src.ml.model_training import carica_modello
-from src.ml.data_cleaning import prepara_dataset_ml
-from src.csp.assignment import risolvi_assegnamento, predici_profili_clienti
-from src.search.a_star import carica_grafo, a_star, trova_nodo_vicino
+from src.ml.previsione import prevedi
+from src.search.a_star import ProfiloVeicolo, carica_grafo, trova_nodo_vicino
+from src.search.routing import ordina_visite, simula_giro
+
+SCENARI = {
+    "feriale": pd.Timestamp("2026-07-01"),   # mercoledi'
+    "festivo": pd.Timestamp("2026-07-05"),   # domenica
+    "evento": pd.Timestamp("2027-05-07"),    # corteo storico di San Nicola
+}
+FINE_TURNO_MIN = INIZIO_TURNO_MIN + TURNO_MIN
 
 
-def esegui_scenario(nome: str, ora: int, minuto: int,
-                    giorno: int, mese: int) -> dict:
-    """Esegue un intero scenario di consegna.
-
-    Args:
-        nome: Nome descrittivo dello scenario
-        ora, minuto, giorno, mese: parametri temporali
-
-    Returns:
-        dict con risultati: assegnamento, percorsi, statistiche
-    """
-    print(f"\n{'='*60}")
-    print(f"  SCENARIO: {nome}")
-    print(f"  Orario: {ora}:{minuto:02d}, Data: {giorno}/{mese}")
-    print(f"{'='*60}")
-
-    t0 = time.time()
-
-    # 1. Inizializza KB
-    print("\n[FASE 1] Inizializzazione Knowledge Base...")
-    kb = KnowledgeBase()
-    clienti_kb = kb.get_clienti()
-    furgoni_kb = kb.get_furgoni()
-    clienti_ztl = kb.clienti_in_ztl()
-    print(f"  Furgoni: {len(furgoni_kb)}")
-    print(f"  Clienti: {len(clienti_kb)}")
-    print(f"  Clienti in ZTL: {len(clienti_ztl)}")
-
-    # 2. Predizione profili ML
-    print("\n[FASE 2] Predizione profili comportamentali (ML)...")
-    codici_clienti = [c["codice"] for c in clienti_kb]
-    profili = predici_profili_clienti(codici_clienti)
-    conteggio_profili = {}
-    for p in profili.values():
-        conteggio_profili[p] = conteggio_profili.get(p, 0) + 1
-    print(f"  Distribuzione: {conteggio_profili}")
-
-    # 3. Assegnamento CSP
-    print("\n[FASE 3] Assegnamento clienti-veicoli (CSP)...")
-    assegnamento = risolvi_assegnamento(
-        codici_clienti, ora, minuto, giorno, mese, profili, kb=kb
-    )
-    if not assegnamento:
-        print("[ERROR] CSP non ha trovato soluzione!")
-        return {"errore": "CSP fallito"}
-
-    tot_assegnati = sum(len(v) for v in assegnamento.values())
-    print(f"  Clienti assegnati: {tot_assegnati}/{len(codici_clienti)}")
-    for veicolo, clienti_list in assegnamento.items():
-        print(f"    {veicolo}: {len(clienti_list)} clienti")
-
-    # 4. Routing A*
-    print("\n[FASE 4] Calcolo percorsi (A*)...")
-    adj, coords, ztl_set = carica_grafo()
-    deposito_nodo = trova_nodo_vicino(DEPOSITO_LAT, DEPOSITO_LON, coords)
-    print(f"  Nodo deposito: {deposito_nodo}")
-
-    # Per ciascun veicolo, calcola la distanza totale
-    percorsi = {}
-    distanza_totale = 0.0
-    tempo_totale = 0.0
-    nodi_irraggiungibili = 0
-
-    for veicolo, clienti_list in assegnamento.items():
-        # Il veicolo ha permesso ZTL?
-        ha_permesso = kb.ha_permesso_ztl(veicolo)
-        evita = not ha_permesso  # se non ha permesso, evita ZTL
-
-        percorso_veicolo = []
-        dist_veicolo = 0.0
-        tempo_veicolo = 0.0
-        nodo_corrente = deposito_nodo
-
-        # Trova i nodi dei clienti
-        nodi_clienti = []
-        for c in clienti_list:
-            nodo_c = kb.nodo_cliente(c)
-            if nodo_c:
-                nodi_clienti.append((c, nodo_c))
-
-        # Routing sequenziale: deposito -> c1 -> c2 -> ... -> deposito
-        for cliente_cod, nodo_dest in nodi_clienti:
-            path, dist, tempo = a_star(
-                nodo_corrente, nodo_dest, adj, coords, evita, ztl_set
-            )
-            if path is not None:
-                percorso_veicolo.append({
-                    "da": nodo_corrente, "a": nodo_dest,
-                    "cliente": cliente_cod,
-                    "distanza_km": round(dist, 3),
-                    "tempo_ore": round(tempo, 4),
-                    "nodi": len(path)
-                })
-                dist_veicolo += dist
-                tempo_veicolo += tempo
-                nodo_corrente = nodo_dest
-            else:
-                nodi_irraggiungibili += 1
-                percorso_veicolo.append({
-                    "da": nodo_corrente, "a": nodo_dest,
-                    "cliente": cliente_cod,
-                    "distanza_km": float("inf"),
-                    "tempo_ore": float("inf"),
-                    "nodi": 0
-                })
-
-        # Ritorno al deposito
-        path_ritorno, dist_r, tempo_r = a_star(
-            nodo_corrente, deposito_nodo, adj, coords, evita, ztl_set
-        )
-        if path_ritorno:
-            dist_veicolo += dist_r
-            tempo_veicolo += tempo_r
-
-        percorsi[veicolo] = {
-            "segmenti": percorso_veicolo,
-            "distanza_totale_km": round(dist_veicolo, 3),
-            "tempo_totale_ore": round(tempo_veicolo, 4),
-            "evita_ztl": evita
-        }
-        distanza_totale += dist_veicolo
-        tempo_totale += tempo_veicolo
-
-    t_elapsed = time.time() - t0
-
-    # 5. Riepilogo
-    print(f"\n{'='*60}")
-    print(f"  RIEPILOGO: {nome}")
-    print(f"{'='*60}")
-    print(f"  Distanza totale flotta: {distanza_totale:.2f} km")
-    print(f"  Tempo totale flotta: {tempo_totale:.2f} ore ({tempo_totale*60:.1f} min)")
-    print(f"  Clienti irraggiungibili: {nodi_irraggiungibili}")
-    print(f"  Tempo di calcolo: {t_elapsed:.1f} secondi")
-
-    for veicolo, info in percorsi.items():
-        ztl_label = "(evita ZTL)" if info["evita_ztl"] else "(accesso ZTL)"
-        n_clienti = len(assegnamento[veicolo])
-        print(f"    {veicolo} {ztl_label}: {n_clienti} clienti, "
-              f"{info['distanza_totale_km']:.2f} km, "
-              f"{info['tempo_totale_ore']*60:.1f} min")
-
-    return {
-        "nome": nome,
-        "assegnamento": assegnamento,
-        "percorsi": percorsi,
-        "distanza_totale_km": round(distanza_totale, 3),
-        "tempo_totale_ore": round(tempo_totale, 4),
-        "clienti_irraggiungibili": nodi_irraggiungibili,
-        "tempo_calcolo_s": round(t_elapsed, 1),
-        "profili": profili,
-        "clienti_ztl": clienti_ztl
-    }
+def hhmm(minuti: float) -> str:
+    m = int(round(minuti))
+    return f"{m // 60:02d}:{m % 60:02d}"
 
 
-def salva_report(risultati: list[dict]) -> None:
-    """Salva il report di confronto scenari."""
+class Pianificatore:
+    """Mantiene caricati KB e grafo tra una pianificazione e l'altra."""
+
+    def __init__(self):
+        self.kb = KnowledgeBase()
+        self.grafo = carica_grafo()
+        _, coords, _ = self.grafo
+        pos = pd.read_csv(POSIZIONI_CLIENTI_CSV, dtype={"Codice_Cliente": str})
+        self.coords_clienti = {f"c_{r.Codice_Cliente}": (r.lat, r.lon) for r in pos.itertuples()}
+        self.nodo_deposito = trova_nodo_vicino(DEPOSITO_LAT, DEPOSITO_LON, coords)
+        self.coord_deposito = coords[self.nodo_deposito]
+        self.profili = {}
+        for v in self.kb.veicoli():
+            vel, vietate = self.kb.profilo_stradale(v["id"])
+            self.profili[v["id"]] = ProfiloVeicolo(vel, vietate)
+
+    def pianifica(self, data: pd.Timestamp, codici: list, previsioni: bool = True,
+                  risolutore=risolvi) -> dict:
+        t0 = time.perf_counter()
+        kb = self.kb
+        g, m, a = data.day, data.month, data.year
+        clienti = [f"c_{c}" for c in codici]
+
+        # 2. ML -> KB
+        if previsioni:
+            scarico, p_manc = prevedi(codici, data)
+            kb.carica_previsioni(scarico, p_manc)
+
+        # 1 + 3. KB -> CSP
+        ist, esclusi = costruisci_istanza(kb, clienti, g, m, a, self.coords_clienti, self.coord_deposito)
+        sol = risolutore(ist) if ist.clienti else None
+        if sol is None:
+            return {"data": data, "tipo_giorno": kb.tipo_giorno(g, m, a), "esclusi": esclusi,
+                    "soluzione": None, "giri": [], "istanza": ist, "km": 0.0, "ritardi": 0,
+                    "veicoli_usati": 0, "rientro_max": None, "fuori_turno": 0, "transiti_ztl": 0,
+                    "preavvisi": [], "tempo_s": time.perf_counter() - t0}
+
+        # 4. ricerca: ordine di visita + A*
+        per_veicolo = {}
+        for c, v in sol.assegnamento.items():
+            per_veicolo.setdefault(v, []).append(c)
+        giri = []
+        for v, lista in sorted(per_veicolo.items()):
+            fin = {c: ist.finestre[(v, c)][0] for c in lista}
+            seq = ordina_visite(lista, fin, ist.servizio, self.coords_clienti, self.coord_deposito)
+            nodi = {c: kb.nodo_cliente(c) for c in lista}
+            giri.append(simula_giro(v, seq, kb, (g, m, a), fin, ist.servizio, nodi,
+                                    self.nodo_deposito, self.grafo, self.profili[v]))
+
+        ris = {"data": data, "tipo_giorno": kb.tipo_giorno(g, m, a), "esclusi": esclusi,
+               "soluzione": sol, "giri": giri, "istanza": ist,
+               "km": sum(gi.km_totali for gi in giri),
+               "ritardi": sum(gi.ritardi for gi in giri),
+               "veicoli_usati": len(giri),
+               "rientro_max": max(gi.rientro_min for gi in giri),
+               "fuori_turno": sum(1 for gi in giri if gi.rientro_min > FINE_TURNO_MIN),
+               "transiti_ztl": sum(gi.transiti_ztl for gi in giri),
+               "preavvisi": [c for c in ist.clienti if kb.richiede_preavviso(c)],
+               "tempo_s": time.perf_counter() - t0}
+        return ris
+
+
+def stampa_piano(r: dict) -> str:
+    sol = r["soluzione"]
+    righe = [f"Data {r['data'].date()} ({r['tipo_giorno']})",
+             f"  CSP: costo {sol.costo:.1f}, ottimo={sol.ottima}, nodi {sol.nodi}, "
+             f"valori rimossi da GAC {sol.valori_rimossi_gac}, {sol.tempo_s:.2f} s"]
+    for c, motivi in r["esclusi"].items():
+        righe.append(f"  NON SERVIBILE {c}: {', '.join(motivi)}")
+    for gi in r["giri"]:
+        transiti = f", transiti obbligati in ZTL {gi.transiti_ztl}" if gi.transiti_ztl else ""
+        righe.append(f"  {gi.veicolo}: {len(gi.tappe)} clienti, {gi.km_totali:.1f} km, "
+                     f"partenza {hhmm(gi.partenza_min)}, rientro {hhmm(gi.rientro_min)}, "
+                     f"ritardi {gi.ritardi}{transiti}")
+        for t in gi.tappe:
+            nota = f" RITARDO {t.ritardo_min:.0f} min" if t.ritardo_min > 0 else ""
+            righe.append(f"     arrivo {hhmm(t.arrivo_min)}  servizio {hhmm(t.inizio_servizio_min)}  "
+                         f"{t.cliente}{nota}")
+    if r["preavvisi"]:
+        righe.append(f"  Da preavvisare (rischio mancata consegna): {', '.join(r['preavvisi'])}")
+    testo = "\n".join(righe)
+    print(testo)
+    return testo
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data", help="data di pianificazione AAAA-MM-GG")
+    args = parser.parse_args()
+
+    p = Pianificatore()
+    print(f"Violazioni d'integrita' della KB: {p.kb.violazioni() or 'nessuna'}")
+    codici = [c[2:] for c in p.kb.clienti_servibili()]
+    scenari = {"richiesta": pd.Timestamp(args.data)} if args.data else SCENARI
+
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    output_path = OUTPUT_DIR / "report_confronto.txt"
+    testo, riepilogo = [], []
+    for nome, data in scenari.items():
+        print(f"\n{'=' * 60}\nSCENARIO {nome.upper()}\n{'=' * 60}")
+        r = p.pianifica(data, codici)
+        if r["soluzione"] is None:
+            print("  Nessun assegnamento possibile")
+            continue
+        testo.append(f"SCENARIO {nome}\n" + stampa_piano(r))
+        riepilogo.append(f"| {nome} | {r['tipo_giorno']} | {len(r['istanza'].clienti)}/{len(codici)} | "
+                         f"{r['veicoli_usati']} | {r['km']:.1f} | {r['ritardi']} | {hhmm(r['rientro_max'])} | "
+                         f"{r['fuori_turno']} | {r['transiti_ztl']} |")
 
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write("REPORT CONFRONTO SCENARI\n")
-        f.write("=" * 60 + "\n\n")
-
-        for r in risultati:
-            f.write(f"Scenario: {r['nome']}\n")
-            f.write(f"  Distanza totale: {r['distanza_totale_km']:.2f} km\n")
-            f.write(f"  Tempo totale: {r['tempo_totale_ore']:.2f} ore "
-                    f"({r['tempo_totale_ore']*60:.1f} min)\n")
-            f.write(f"  Clienti irraggiungibili: {r['clienti_irraggiungibili']}\n")
-            f.write(f"  Tempo di calcolo: {r['tempo_calcolo_s']:.1f} s\n")
-            f.write(f"  Clienti in ZTL: {len(r.get('clienti_ztl', []))}\n\n")
-
-            for veicolo, info in r["percorsi"].items():
-                ztl_label = "(evita ZTL)" if info["evita_ztl"] else "(accesso ZTL)"
-                n_clienti = len(r["assegnamento"][veicolo])
-                f.write(f"    {veicolo} {ztl_label}: {n_clienti} clienti, "
-                        f"{info['distanza_totale_km']:.2f} km, "
-                        f"{info['tempo_totale_ore']*60:.1f} min\n")
-            f.write("\n" + "-" * 60 + "\n\n")
-
-        # Confronto
-        if len(risultati) >= 2:
-            r_feriale = risultati[0]
-            r_sn = risultati[1]
-            f.write("CONFRONTO\n")
-            f.write(f"  Distanza feriale: {r_feriale['distanza_totale_km']:.2f} km\n")
-            f.write(f"  Distanza San Nicola: {r_sn['distanza_totale_km']:.2f} km\n")
-            delta_d = r_sn["distanza_totale_km"] - r_feriale["distanza_totale_km"]
-            f.write(f"  Delta distanza: {delta_d:+.2f} km\n")
-            delta_t = (r_sn["tempo_totale_ore"] - r_feriale["tempo_totale_ore"]) * 60
-            f.write(f"  Delta tempo: {delta_t:+.1f} min\n")
-
-    print(f"\n[OK] Report salvato in {output_path}")
+    tabella = ["| Scenario | Tipo giorno | Clienti serviti | Veicoli | km | Ritardi | Ultimo rientro | "
+               "Giri oltre turno | Transiti ZTL obbligati |",
+               "|---|---|---|---|---|---|---|---|---|"] + riepilogo
+    print("\n" + "\n".join(tabella))
+    file_out = OUTPUT_DIR / (f"piano_{args.data}.txt" if args.data else "piani_scenari.txt")
+    file_out.write_text("\n\n".join(testo) + "\n\n" + "\n".join(tabella) + "\n", encoding="utf-8")
+    print(f"\n[OK] Piani salvati in {file_out}")
 
 
 if __name__ == "__main__":
-    print("=" * 60)
-    print("  LOGISTICA FLOTTA FURGONI BARI")
-    print("  Pipeline: KB -> ML -> CSP -> A*")
-    print("=" * 60)
-
-    risultati = []
-
-    # Scenario 1: Giorno feriale (15 giugno, ore 10:00)
-    r1 = esegui_scenario("Giorno Feriale (15 Giugno, 10:00)", 10, 0, 15, 6)
-    risultati.append(r1)
-
-    # Scenario 2: Corteo San Nicola (7 maggio, ore 10:00)
-    r2 = esegui_scenario("Corteo San Nicola (7 Maggio, 10:00)", 10, 0, 7, 5)
-    risultati.append(r2)
-
-    # Salva report di confronto
-    salva_report(risultati)
-
-    print("\n[OK] Esecuzione completata con successo!")
+    main()
