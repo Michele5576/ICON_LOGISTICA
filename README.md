@@ -45,6 +45,7 @@ pytest tests/                             # test di KB, ricerca e CSP
 ## Struttura
 
 ```
+docs/      relazione del progetto (Relazione_Progetto.pdf)
 dataset/   dati di partenza (Excel, OSM) e derivati (ml_dataset.csv, clienti_posizione.csv)
 kb/        knowledge_base.pl (regole) + fatti generati
 src/
