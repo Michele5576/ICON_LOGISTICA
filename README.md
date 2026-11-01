@@ -9,9 +9,6 @@ Sistema basato su conoscenza che pianifica le consegne giornaliere di una flotta
 | Assegnamento clienti → veicoli come CSP con vincoli flessibili: GAC, Branch and Bound con separazione dei domini, Simulated Annealing | Ragionamento con vincoli (cap. 3) | `src/csp/assignment.py` |
 | Ordine di visita (DF Branch and Bound) e percorsi su grafo OSM orientato (A* vs LCFS) | Ricerca di soluzioni in spazi di stati (cap. 2) | `src/search/` |
 
-Autore: Michele Barone, matricola 760395, m.barone23@studenti.uniba.it
-Repository: https://github.com/Michele5576/ICON_LOGISTICA
-
 ## Requisiti
 
 - Python ≥ 3.11
